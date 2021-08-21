@@ -1,0 +1,27 @@
+{
+  "name": "ethereum-contract-template",
+  "version": "1.0.0",
+  "description": "A template for Ethereum contracts.",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dappetizer/ethereum-contract-template.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Dappetizer/ethereum-contract-template/issues"
+  },
+  "homepage": "https://github.com/Dappetizer/ethereum-contract-template#readme",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.0",
+    "@openzeppelin/test-helpers": "^0.5.13"
+  }
+}
