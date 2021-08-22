@@ -7,7 +7,8 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
 contract TemplateERC721 is Ownable, ERC721, ERC721Burnable {
 
-    uint256 public tokenCount;
+    uint256 public mintCount;
+    uint256 public burnCount;
     uint256 public basePrice = 1000000000000000000; //1 ETH
     string public baseURI;
 
@@ -19,16 +20,22 @@ contract TemplateERC721 is Ownable, ERC721, ERC721Burnable {
 
         //send eth to owner address
         (bool sent, bytes memory data) = owner().call{value: msg.value}("");
-        require(sent, "Failed to send");
+        require(sent, "Failed to send to owner address");
 
         _safeMint(to, tokenId);
 
-        tokenCount += 1;
+        mintCount += 1;
     }
 
     // function mint(address to, uint256 tokenId, bytes memory data) public onlyOwner {
     //     _safeMint(to, tokenId, data);
     // }
+
+    /// @dev sets a new basePrice value
+    /// @param newBasePrice value of new basePrice
+    function setBasePrice(uint256 newBasePrice) public onlyOwner {
+        basePrice = newBasePrice;
+    }
 
     function setBaseURI(string memory newBaseURI) public onlyOwner {
         baseURI = newBaseURI;

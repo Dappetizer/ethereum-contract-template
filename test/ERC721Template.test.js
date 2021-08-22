@@ -55,6 +55,12 @@ contract("TemplateERC721 Contract Tests", async accounts => {
             tokenId: "0"
         });
 
+        //query contract
+        const q1 = await this.contracts[0].mintCount();
+
+        //check queries
+        assert.equal(q1.toNumber(), 1);
+
         nextTokenId += 1;
     });
 
