@@ -8,7 +8,7 @@ contract("TemplateERC721 Contract Tests", async accounts => {
     const baseURI = "https://some.public.api/endpoint";
     
     let nextTokenId = 0;
-    let basePrice = 1000000000000000;
+    let basePrice = 1000000000000000000; //1 ETH
 
     before(async () => {
         //initialize contract array
