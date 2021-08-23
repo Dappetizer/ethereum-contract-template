@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
-contract TemplateERC721 is Ownable, ERC721, ERC721Burnable {
+contract BuyableERC721 is Ownable, ERC721, ERC721Burnable {
 
     uint256 public mintCount;
     uint256 public burnCount;

@@ -1,7 +1,7 @@
 const { BN, constants, expectEvent, expectRevert, balance } = require("@openzeppelin/test-helpers");
-const FreakyFrogFriends = artifacts.require("TemplateERC721");
+const FreakyFrogFriends = artifacts.require("BuyableERC721");
 
-contract("TemplateERC721 Contract Tests", async accounts => {
+contract("BuyableERC721 Contract Tests", async accounts => {
     const [deployer, userA, userB, userC] = accounts;
     const tokenName = "Test Tokens";
     const tokenSymbol = "TEST";
