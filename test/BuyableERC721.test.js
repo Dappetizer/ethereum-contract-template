@@ -5,7 +5,7 @@ contract("BuyableERC721 Contract Tests", async accounts => {
     const [deployer, userA, userB, userC] = accounts;
     const tokenName = "Test Tokens";
     const tokenSymbol = "TEST";
-    const baseURI = "https://some.public.api/endpoint";
+    const baseURI = "https://some.public.api/endpoint/";
     const maxSupply = 10;
     
     let nextTokenId = 0;
