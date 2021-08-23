@@ -9,7 +9,6 @@ contract("TemplateERC721 Contract Tests", async accounts => {
     const maxSupply = 10;
     
     let nextTokenId = 0;
-    // let basePrice = 1000000000000000000; //1 ETH
     let basePrice = `${1*1e18}`; //1 ETH
 
     before(async () => {

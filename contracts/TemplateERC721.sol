@@ -31,9 +31,20 @@ contract TemplateERC721 is Ownable, ERC721, ERC721Burnable {
         _safeMint(to, tokenId);
     }
 
-    // function mint(address to, uint256 tokenId, bytes memory data) public onlyOwner {
-    //     _safeMint(to, tokenId, data);
-    // }
+    /// @dev mints the tokenId and forwards data if min value is paid
+    /// @param to address to receive the new token
+    /// @param tokenId id of token to mint
+    /// @param data extra bytes data to pass along
+    function mint(address to, uint256 tokenId, bytes memory data) public payable {
+        //validate
+        require(msg.value == basePrice, "Must send exact value to mint");
+
+        //send eth to owner address
+        (bool sent, bytes memory data2) = owner().call{value: msg.value}("");
+        require(sent, "Failed to send to owner address");
+
+        _safeMint(to, tokenId, data);
+    }
 
     /// @dev sets a new basePrice value
     /// @param newBasePrice value of new basePrice
@@ -41,11 +52,14 @@ contract TemplateERC721 is Ownable, ERC721, ERC721Burnable {
         basePrice = newBasePrice;
     }
 
+    /// @dev sets a new baseURI for contract
+    /// @param newBaseURI new baseURI to set
     function setBaseURI(string memory newBaseURI) public onlyOwner {
         baseURI = newBaseURI;
     }
 
     /// @dev overridden ERC721Metadata function to return baseURI
+    /// @return baseURI string
     function _baseURI() internal view override returns (string memory) {
         return baseURI;
     }
@@ -67,9 +81,9 @@ contract TemplateERC721 is Ownable, ERC721, ERC721Burnable {
         }
     }
 
-    // Function to receive Ether. msg.data must be empty
+    /// @dev function to receive Ether. msg.data must be empty
     receive() external payable {}
 
-    // Fallback function is called when msg.data is not empty
+    /// @dev fallback function is called when msg.data is not empty
     fallback() external payable {}
 }
