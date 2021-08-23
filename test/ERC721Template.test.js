@@ -44,7 +44,7 @@ contract("TemplateERC721 Contract Tests", async accounts => {
         assert.equal(q1, tokenSymbol);
     });
 
-    it("Can mint a new token", async () => {
+    it("Can mint token", async () => {
         //send mint transaction
         const t1 = await this.contracts[0].mint(userA, nextTokenId, {from: deployer, value: basePrice});
 
@@ -231,6 +231,28 @@ contract("TemplateERC721 Contract Tests", async accounts => {
         assert.equal(q5, constants.ZERO_ADDRESS);
     });
 
-    
+    it("Can burn token (ERC721Burnable)", async () => {
+        //send burn transaction
+        const t1 = await this.contracts[0].burn(0, {from: userB});
+
+        //check event emitted
+        expectEvent(t1, 'Transfer', {
+            from: userB,
+            to: constants.ZERO_ADDRESS,
+            tokenId: "0"
+        });
+
+        //query state
+        const q1 = await this.contracts[0].balanceOf(userA);
+        const q2 = await this.contracts[0].balanceOf(userB);
+        const q3 = await this.contracts[0].balanceOf(userC);
+        const q4 = await this.contracts[0].burnCount();
+
+        //check queries
+        assert.equal(q1.toNumber(), 0);
+        assert.equal(q2.toNumber(), 0);
+        assert.equal(q3.toNumber(), 0);
+        assert.equal(q4.toNumber(), 1);
+    });
 
 });

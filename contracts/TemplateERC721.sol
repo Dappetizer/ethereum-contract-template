@@ -23,8 +23,6 @@ contract TemplateERC721 is Ownable, ERC721, ERC721Burnable {
         require(sent, "Failed to send to owner address");
 
         _safeMint(to, tokenId);
-
-        mintCount += 1;
     }
 
     // function mint(address to, uint256 tokenId, bytes memory data) public onlyOwner {
@@ -46,9 +44,22 @@ contract TemplateERC721 is Ownable, ERC721, ERC721Burnable {
         return baseURI;
     }
 
-    // function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal override {
-    //     require(false, "in _beforeTokenTransfer()");
-    // }
+    /// @dev overridden ERC721 function hook that is called before every token transfer, including
+    /// minting and burning events.
+    /// @param from address token is moving from
+    /// @param to address token is moving to
+    /// @param tokenId id of token being moved
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal override {
+        //if minting
+        if (from == address(0x0)) {
+            mintCount += 1;
+        }
+
+        //if burning
+        if (to == address(0x0)) {
+            burnCount += 1;
+        }
+    }
 
     // Function to receive Ether. msg.data must be empty
     receive() external payable {}
