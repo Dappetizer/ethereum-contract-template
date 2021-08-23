@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -9,14 +9,20 @@ contract TemplateERC721 is Ownable, ERC721, ERC721Burnable {
 
     uint256 public mintCount;
     uint256 public burnCount;
+    uint256 public maxSupply;
     uint256 public basePrice = 1000000000000000000; //1 ETH
     string public baseURI;
 
-    constructor() ERC721("Test Tokens", "TEST") {}
+    constructor(string memory name_, string memory symbol_, uint256 maxSupply_) ERC721(name_, symbol_) {
+        maxSupply = maxSupply_;
+    }
 
+    /// @dev mints the tokenId if min value is paid
+    /// @param to address to receive the new token
+    /// @param tokenId id of token to mint
     function mint(address to, uint256 tokenId) public payable {
         //validate
-        require(msg.value >= basePrice, "insufficient value to mint");
+        require(msg.value == basePrice, "Must send exact value to mint");
 
         //send eth to owner address
         (bool sent, bytes memory data) = owner().call{value: msg.value}("");

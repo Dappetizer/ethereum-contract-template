@@ -1,4 +1,4 @@
-const { BN, constants, expectEvent, expectRevert } = require("@openzeppelin/test-helpers");
+const { BN, constants, expectEvent, expectRevert, balance } = require("@openzeppelin/test-helpers");
 const FreakyFrogFriends = artifacts.require("TemplateERC721");
 
 contract("TemplateERC721 Contract Tests", async accounts => {
@@ -6,9 +6,11 @@ contract("TemplateERC721 Contract Tests", async accounts => {
     const tokenName = "Test Tokens";
     const tokenSymbol = "TEST";
     const baseURI = "https://some.public.api/endpoint";
+    const maxSupply = 10;
     
     let nextTokenId = 0;
-    let basePrice = 1000000000000000000; //1 ETH
+    // let basePrice = 1000000000000000000; //1 ETH
+    let basePrice = `${1*1e18}`; //1 ETH
 
     before(async () => {
         //initialize contract array
@@ -17,7 +19,15 @@ contract("TemplateERC721 Contract Tests", async accounts => {
 
     it("Can deploy contract", async () => {
         //deploy contract
-        this.contracts[0] = await FreakyFrogFriends.new({from: deployer});
+        this.contracts[0] = await FreakyFrogFriends.new(tokenName, tokenSymbol, maxSupply, {from: deployer});
+    });
+
+    it("Can get max supply", async () => {
+        //query contract
+        const q1 = await this.contracts[0].maxSupply();
+
+        //check query
+        assert.equal(q1.toNumber(), maxSupply);
     });
 
     it("Can get contract owner (Ownable)", async () => {
@@ -45,8 +55,16 @@ contract("TemplateERC721 Contract Tests", async accounts => {
     });
 
     it("Can mint token", async () => {
+        //query pre state
+        const ownerTracker = await balance.tracker(deployer, 'wei');
+        const buyerTracker = await balance.tracker(userA, 'wei');
+
+        //get initial balance
+        const ownerPreBal = await ownerTracker.get();
+        const buyerPreBal = await buyerTracker.get();
+
         //send mint transaction
-        const t1 = await this.contracts[0].mint(userA, nextTokenId, {from: deployer, value: basePrice});
+        const t1 = await this.contracts[0].mint(userA, nextTokenId, {from: userA, value: basePrice});
 
         //check event emitted
         expectEvent(t1, 'Transfer', {
@@ -55,11 +73,15 @@ contract("TemplateERC721 Contract Tests", async accounts => {
             tokenId: "0"
         });
 
-        //query contract
+        //query post state
         const q1 = await this.contracts[0].mintCount();
+        const ownerDelta = await ownerTracker.delta();
+        // const { delta, fees } = await buyerTracker.deltaWithFees();
 
         //check queries
         assert.equal(q1.toNumber(), 1);
+        assert.equal(ownerDelta, basePrice);
+        // assert.equal(delta, basePrice + fees);
 
         nextTokenId += 1;
     });
@@ -67,8 +89,14 @@ contract("TemplateERC721 Contract Tests", async accounts => {
     it("Can reject invalid minting", async () => {
         //attempt to mint with insufficient funds
         await expectRevert(
-            this.contracts[0].mint(userA, 0, {from: deployer, value: 1000}),
-            "insufficient value to mint",
+            this.contracts[0].mint(userA, 1, {from: deployer, value: `${0.1*1e18}`}),
+            "Must send exact value to mint",
+        );
+
+        //attempt to mint with overpaying funds
+        await expectRevert(
+            this.contracts[0].mint(userA, 1, {from: deployer, value: `${1.1*1e18}`}),
+            "Must send exact value to mint",
         );
 
         //attempt to mint existing token
