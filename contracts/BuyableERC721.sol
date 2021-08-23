@@ -4,8 +4,9 @@ pragma solidity 0.8.7;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract BuyableERC721 is Ownable, ERC721, ERC721Burnable {
+contract BuyableERC721 is Ownable, Pausable, ERC721, ERC721Burnable {
 
     uint256 public mintCount;
     uint256 public burnCount;
@@ -15,6 +16,15 @@ contract BuyableERC721 is Ownable, ERC721, ERC721Burnable {
 
     constructor(string memory name_, string memory symbol_, uint256 maxSupply_) ERC721(name_, symbol_) {
         maxSupply = maxSupply_;
+    }
+
+    /// @dev toggles paused state
+    function togglePaused() public onlyOwner {
+        if (paused()) {
+            _unpause();
+        } else {
+            _pause();
+        }
     }
 
     /// @dev mints the tokenId if min value is paid
