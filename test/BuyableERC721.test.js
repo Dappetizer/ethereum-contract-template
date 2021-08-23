@@ -1,4 +1,5 @@
 const { BN, constants, expectEvent, expectRevert, balance } = require("@openzeppelin/test-helpers");
+const { web3 } = require("@openzeppelin/test-helpers/src/setup");
 const FreakyFrogFriends = artifacts.require("BuyableERC721");
 
 contract("BuyableERC721 Contract Tests", async accounts => {
@@ -27,6 +28,14 @@ contract("BuyableERC721 Contract Tests", async accounts => {
 
         //check query
         assert.equal(q1.toNumber(), maxSupply);
+    });
+
+    it("Can get paused state (Pausable)", async () => {
+        //query contract
+        const q1 = await this.contracts[0].paused();
+
+        //check query
+        assert.equal(q1, false);
     });
 
     it("Can get contract owner (Ownable)", async () => {
@@ -256,6 +265,63 @@ contract("BuyableERC721 Contract Tests", async accounts => {
         assert.equal(q3.toNumber(), 0);
         assert.equal(q4, userB);
         assert.equal(q5, constants.ZERO_ADDRESS);
+    });
+
+    it("Can reject invalid pause (Pausable)", async () => {
+        //attempt to pause not as owner
+        await expectRevert(
+            this.contracts[0].togglePaused({from: userA}),
+            "Ownable: caller is not the owner",
+        );
+    });
+
+    it("Can pause contract (Pausable)", async () => {
+        //send togglePause transaction
+        const t1 = await this.contracts[0].togglePaused({from: deployer});
+
+        //check event emitted
+        expectEvent(t1, 'Paused', {
+            account: deployer
+        });
+
+        //query state
+        const q1 = await this.contracts[0].paused();
+
+        //check queries
+        assert.equal(q1, true);
+    });
+
+    it("Can reject invalid transactions while paused (Pausable)", async () => {
+        //attempt to mint while paused
+        // await expectRevert(
+        //     this.contracts[0].mint(userA, 1, {from: deployer, value: `${1.1*1e18}`}),
+        //     "Pausable: paused",
+        // );
+
+        // let hexData = await web3.utils.utf8ToHex("testing...");
+        let bytesData = await web3.utils.hexToBytes(userA);
+
+        //attempt to mint while paused
+        await expectRevert(
+            this.contracts[0].mint(userA, 1, bytesData, {from: deployer, value: `${1.1*1e18}`}),
+            "Pausable: paused",
+        );
+    });
+
+    it("Can unpause contract (Pausable)", async () => {
+        //send togglePause transaction
+        const t1 = await this.contracts[0].togglePaused({from: deployer});
+
+        //check event emitted
+        expectEvent(t1, 'Unpaused', {
+            account: deployer
+        });
+
+        //query state
+        const q1 = await this.contracts[0].paused();
+
+        //check queries
+        assert.equal(q1, false);
     });
 
     it("Can burn token (ERC721Burnable)", async () => {

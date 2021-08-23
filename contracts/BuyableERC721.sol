@@ -2,11 +2,10 @@
 pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract BuyableERC721 is Ownable, Pausable, ERC721, ERC721Burnable {
+contract BuyableERC721 is Ownable, Pausable, ERC721 {
 
     uint256 public mintCount;
     uint256 public burnCount;
@@ -30,7 +29,7 @@ contract BuyableERC721 is Ownable, Pausable, ERC721, ERC721Burnable {
     /// @dev mints the tokenId if min value is paid
     /// @param to address to receive the new token
     /// @param tokenId id of token to mint
-    function mint(address to, uint256 tokenId) public payable {
+    function mint(address to, uint256 tokenId) public payable whenNotPaused {
         //validate
         require(msg.value == basePrice, "Must send exact value to mint");
 
@@ -45,15 +44,24 @@ contract BuyableERC721 is Ownable, Pausable, ERC721, ERC721Burnable {
     /// @param to address to receive the new token
     /// @param tokenId id of token to mint
     /// @param data extra bytes data to pass along
-    function mint(address to, uint256 tokenId, bytes memory data) public payable {
+    function mint(address to, uint256 tokenId, bytes memory data) public payable whenNotPaused {
         //validate
         require(msg.value == basePrice, "Must send exact value to mint");
 
         //send eth to owner address
-        (bool sent, bytes memory data2) = owner().call{value: msg.value}("");
+        (bool sent, bytes memory data_) = owner().call{value: msg.value}("");
         require(sent, "Failed to send to owner address");
 
         _safeMint(to, tokenId, data);
+    }
+
+    /// @dev burns a token by setting its owbership to the zero address
+    /// @param tokenId id of token to burn
+    function burn(uint256 tokenId) public whenNotPaused {
+        //validate
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "caller is not owner nor approved");
+
+        _burn(tokenId);
     }
 
     /// @dev sets a new basePrice value
