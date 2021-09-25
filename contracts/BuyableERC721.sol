@@ -26,10 +26,8 @@ contract BuyableERC721 is Ownable, Pausable, ERC721 {
         }
     }
 
-    /// @dev mints the tokenId if min value is paid
-    /// @param to address to receive the new token
-    /// @param tokenId id of token to mint
-    function mint(address to, uint256 tokenId) public payable whenNotPaused {
+    /// @dev mints the next tokenId to msg.sender if min value is paid
+    function mint() public payable whenNotPaused {
         //validate
         require(msg.value == basePrice, "Must send exact value to mint");
 
@@ -37,14 +35,12 @@ contract BuyableERC721 is Ownable, Pausable, ERC721 {
         (bool sent, bytes memory data) = owner().call{value: msg.value}("");
         require(sent, "Failed to send to owner address");
 
-        _safeMint(to, tokenId);
+        _safeMint(msg.sender, mintCount);
     }
 
     /// @dev mints the tokenId and forwards data if min value is paid
-    /// @param to address to receive the new token
-    /// @param tokenId id of token to mint
     /// @param data extra bytes data to pass along
-    function mint(address to, uint256 tokenId, bytes memory data) public payable whenNotPaused {
+    function mint(bytes memory data) public payable whenNotPaused {
         //validate
         require(msg.value == basePrice, "Must send exact value to mint");
 
@@ -52,7 +48,7 @@ contract BuyableERC721 is Ownable, Pausable, ERC721 {
         (bool sent, bytes memory data_) = owner().call{value: msg.value}("");
         require(sent, "Failed to send to owner address");
 
-        _safeMint(to, tokenId, data);
+        _safeMint(msg.sender, mintCount, data);
     }
 
     /// @dev burns a token by setting its owbership to the zero address

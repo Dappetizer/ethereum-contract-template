@@ -72,7 +72,7 @@ contract("BuyableERC721 Contract Tests", async accounts => {
         const buyerPreBal = await buyerTracker.get();
 
         //send mint transaction
-        const t1 = await this.contracts[0].mint(userA, nextTokenId, {from: userA, value: basePrice});
+        const t1 = await this.contracts[0].mint({from: userA, value: basePrice});
 
         //check event emitted
         expectEvent(t1, 'Transfer', {
@@ -97,27 +97,27 @@ contract("BuyableERC721 Contract Tests", async accounts => {
     it("Can reject invalid minting", async () => {
         //attempt to mint with insufficient funds
         await expectRevert(
-            this.contracts[0].mint(userA, 1, {from: deployer, value: `${0.1*1e18}`}),
+            this.contracts[0].mint({from: userA, value: `${0.1*1e18}`}),
             "Must send exact value to mint",
         );
 
         //attempt to mint with overpaying funds
         await expectRevert(
-            this.contracts[0].mint(userA, 1, {from: deployer, value: `${1.1*1e18}`}),
+            this.contracts[0].mint({from: userA, value: `${1.1*1e18}`}),
             "Must send exact value to mint",
         );
 
         //attempt to mint existing token
-        await expectRevert(
-            this.contracts[0].mint(userA, 0, {from: deployer, value: basePrice}),
-            "ERC721: token already minted",
-        );
+        // await expectRevert(
+        //     this.contracts[0].mint(userA, 0, {from: deployer, value: basePrice}),
+        //     "ERC721: token already minted",
+        // );
 
         //attempt to mint to zero address
-        await expectRevert(
-            this.contracts[0].mint(constants.ZERO_ADDRESS, 1, {from: deployer, value: basePrice}),
-            "ERC721: mint to the zero address",
-        );
+        // await expectRevert(
+        //     this.contracts[0].mint(constants.ZERO_ADDRESS, 1, {from: deployer, value: basePrice}),
+        //     "ERC721: mint to the zero address",
+        // );
     });
 
     it("Can get balance of address (IERC721)", async () => {
@@ -293,19 +293,19 @@ contract("BuyableERC721 Contract Tests", async accounts => {
 
     it("Can reject invalid transactions while paused (Pausable)", async () => {
         //attempt to mint while paused
-        // await expectRevert(
-        //     this.contracts[0].mint(userA, 1, {from: deployer, value: `${1.1*1e18}`}),
-        //     "Pausable: paused",
-        // );
-
-        // let hexData = await web3.utils.utf8ToHex("testing...");
-        let bytesData = await web3.utils.hexToBytes(userA);
-
-        //attempt to mint while paused
         await expectRevert(
-            this.contracts[0].mint(userA, 1, bytesData, {from: deployer, value: `${1.1*1e18}`}),
+            this.contracts[0].mint({from: userA, value: `${1.1*1e18}`}),
             "Pausable: paused",
         );
+
+        // let hexData = await web3.utils.utf8ToHex("testing...");
+        // let bytesData = await web3.utils.hexToBytes(userA);
+
+        //attempt to mint while paused
+        // await expectRevert(
+        //     this.contracts[0].mint(bytesData, {from: userA, value: `${1.1*1e18}`}),
+        //     "Pausable: paused",
+        // );
     });
 
     it("Can unpause contract (Pausable)", async () => {
