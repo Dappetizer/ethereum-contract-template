@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-/// @title A custom ERC721 contract
+/// @title Custom ERC721 implementation.
 /// @author Craig Branscom
 /// @notice Contract is Ownable and implements the ERC721 spec with Metadata extension.
 contract CustomERC721 is Ownable, IERC721, IERC721Metadata {
