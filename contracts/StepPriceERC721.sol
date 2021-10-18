@@ -10,41 +10,64 @@ contract StepPriceERC721 is Ownable, Pausable, ERC721 {
     uint256 public mintCount;
     uint256 public burnCount;
     uint256 public maxSupply;
-    uint256 public basePrice = 1000000000000000000; //1 ETH
-    uint256 public stepAmount = 1000000000000000000; //1 ETH
+    uint256 public stepPrice = 1000000000000000000; //1 ETH
     uint256 public stride = 1; //number of mints per step
-    uint256 public steps = 0; //number of steps taken
-    // uint256 public freeMints = 0; //mints for token id < freeMints are free
+    uint256 public steps = 1; //number of steps taken
+    uint256 public freeMints; //token id < freeMints are free to mint
     string public baseURI;
+
+    /// @dev reverts if any tokens have been minted
+    modifier onlyPreMint() {
+        require(mintCount == 0, "Must be before first mint");
+        _;
+    }
 
     constructor(string memory name_, string memory symbol_, uint256 maxSupply_) ERC721(name_, symbol_) {
         maxSupply = maxSupply_;
+
+        //TODO: initialize paused?
     }
 
     /// @dev toggles paused state
     function togglePaused() public onlyOwner {
-        if (paused()) {
-            _unpause();
-        } else {
-            _pause();
-        }
+        paused() ? _unpause() : _pause();
     }
 
-    /// @dev gets the current price of the next mintable token
-    function getCurrentPrice() public view returns (uint256) {
+    /// @dev gets the price of the next mintable token
+    function getPrice() public view returns (uint256) {
         //if next mint is new step
         if ((mintCount + 1) % stride == 0) {
-            return ((steps + 1) * stepAmount) + basePrice;
+            return (steps + 1) * stepPrice;
         } else {
-            return (steps * stepAmount) + basePrice;
+            return steps * stepPrice;
         }
         
     }
 
+    /// @dev sets new step price
+    function setStepPrice(uint256 newStepPrice) public onlyOwner onlyPreMint {
+        stepPrice = newStepPrice;
+    }
+
+    /// @dev sets new stride
+    function setStride(uint256 newStride) public onlyOwner onlyPreMint {
+        //validate
+        require(newStride > 0, "stride must be greater than zero");
+
+        stride = newStride;
+    }
+
+    /// @dev sets number of initial free mints
+    function setFreeMints(uint256 newFreeMints) public onlyOwner onlyPreMint {
+        freeMints = newFreeMints;
+    } 
+
     /// @dev mints the next tokenId to msg.sender if min value is paid
     function mint() public payable whenNotPaused {
-        //validate
-        require(msg.value == getCurrentPrice(), "Must send exact value to mint");
+        if (mintCount > freeMints) {
+            //validate
+            require(msg.value == getPrice(), "Must send exact value to mint");
+        }
 
         //send eth to owner address
         (bool sent, bytes memory data) = owner().call{value: msg.value}("");
@@ -56,8 +79,10 @@ contract StepPriceERC721 is Ownable, Pausable, ERC721 {
     /// @dev mints the tokenId and forwards data if min value is paid
     /// @param data extra bytes data to pass along
     function mint(bytes memory data) public payable whenNotPaused {
-        //validate
-        require(msg.value == getCurrentPrice(), "Must send exact value to mint");
+        if (mintCount > freeMints) {
+            //validate
+            require(msg.value == getPrice(), "Must send exact value to mint");
+        }
 
         //send eth to owner address
         (bool sent, bytes memory data_) = owner().call{value: msg.value}("");
@@ -73,12 +98,6 @@ contract StepPriceERC721 is Ownable, Pausable, ERC721 {
         require(_isApprovedOrOwner(_msgSender(), tokenId), "caller is not owner nor approved");
 
         _burn(tokenId);
-    }
-
-    /// @dev sets a new basePrice value
-    /// @param newBasePrice value of new basePrice
-    function setBasePrice(uint256 newBasePrice) public onlyOwner {
-        basePrice = newBasePrice;
     }
 
     /// @dev sets a new baseURI for contract

@@ -1,16 +1,16 @@
 const { BN, constants, expectEvent, expectRevert, balance } = require("@openzeppelin/test-helpers");
 const { web3 } = require("@openzeppelin/test-helpers/src/setup");
-const FreakyFrogFriends = artifacts.require("BuyableERC721");
+const FlatPriceERC721 = artifacts.require("FlatPriceERC721");
 
-contract("BuyableERC721 Contract Tests", async accounts => {
+contract("FlatPriceERC721 Contract Tests", async accounts => {
     const [deployer, userA, userB, userC] = accounts;
-    const tokenName = "Test Tokens";
-    const tokenSymbol = "TEST";
+    const tokenName = "Flat Tokens";
+    const tokenSymbol = "FLAT";
     const baseURI = "https://some.public.api/endpoint/";
     const maxSupply = 10;
-    
-    let nextTokenId = 0;
+
     let basePrice = `${1*1e18}`; //1 ETH
+    let freeMints = 1;
 
     before(async () => {
         //initialize contract array
@@ -19,7 +19,7 @@ contract("BuyableERC721 Contract Tests", async accounts => {
 
     it("Can deploy contract", async () => {
         //deploy contract
-        this.contracts[0] = await FreakyFrogFriends.new(tokenName, tokenSymbol, maxSupply, {from: deployer});
+        this.contracts[0] = await FlatPriceERC721.new(tokenName, tokenSymbol, maxSupply, {from: deployer});
     });
 
     it("Can get max supply", async () => {
@@ -62,6 +62,35 @@ contract("BuyableERC721 Contract Tests", async accounts => {
         assert.equal(q1, tokenSymbol);
     });
 
+    it("Can set and get free mint count", async () => {
+        //send mint transaction
+        const t1 = await this.contracts[0].setFreeMints(freeMints, {from: deployer});
+
+        //query contract
+        const q1 = await this.contracts[0].freeMints();
+
+        //check query
+        assert.equal(q1, freeMints);
+    });
+
+    it("Can mint free token", async () => {
+        //send mint transaction
+        const t1 = await this.contracts[0].mint({from: userA});
+
+        //check event emitted
+        expectEvent(t1, 'Transfer', {
+            from: constants.ZERO_ADDRESS,
+            to: userA,
+            tokenId: "0"
+        });
+
+        //query post state
+        const q1 = await this.contracts[0].mintCount();
+
+        //check post state
+        assert.equal(q1.toNumber(), 1);
+    });
+
     it("Can mint token", async () => {
         //query pre state
         const ownerTracker = await balance.tracker(deployer, 'wei');
@@ -78,7 +107,7 @@ contract("BuyableERC721 Contract Tests", async accounts => {
         expectEvent(t1, 'Transfer', {
             from: constants.ZERO_ADDRESS,
             to: userA,
-            tokenId: "0"
+            tokenId: "1"
         });
 
         //query post state
@@ -87,11 +116,9 @@ contract("BuyableERC721 Contract Tests", async accounts => {
         // const { delta, fees } = await buyerTracker.deltaWithFees();
 
         //check queries
-        assert.equal(q1.toNumber(), 1);
+        assert.equal(q1.toNumber(), 2);
         assert.equal(ownerDelta, basePrice);
         // assert.equal(delta, basePrice + fees);
-
-        nextTokenId += 1;
     });
 
     it("Can reject invalid minting", async () => {
@@ -125,7 +152,7 @@ contract("BuyableERC721 Contract Tests", async accounts => {
         const q1 = await this.contracts[0].balanceOf(userA);
 
         //check query
-        assert.equal(q1.toNumber(), 1);
+        assert.equal(q1.toNumber(), 2);
     });
 
     it("Can get owner of token id (IERC721)", async () => {
@@ -173,7 +200,7 @@ contract("BuyableERC721 Contract Tests", async accounts => {
         const q4 = await this.contracts[0].getApproved(0);
 
         //check queries
-        assert.equal(q1.toNumber(), 0);
+        assert.equal(q1.toNumber(), 1);
         assert.equal(q2.toNumber(), 1);
         assert.equal(q3, userB);
         assert.equal(q4, constants.ZERO_ADDRESS);
@@ -199,6 +226,7 @@ contract("BuyableERC721 Contract Tests", async accounts => {
 
     it("Can transfer from address as approved user (IERC721)", async () => {
         //send transferFrom transaction
+        //transfer from user b to user c as user a
         const t1 = await this.contracts[0].transferFrom(userB, userC, 0, {from: userA});
 
         //check event emitted
@@ -216,7 +244,7 @@ contract("BuyableERC721 Contract Tests", async accounts => {
         const q5 = await this.contracts[0].getApproved(0);
 
         //check queries
-        assert.equal(q1.toNumber(), 0);
+        assert.equal(q1.toNumber(), 1);
         assert.equal(q2.toNumber(), 0);
         assert.equal(q3.toNumber(), 1);
         assert.equal(q4, userC);
@@ -243,6 +271,7 @@ contract("BuyableERC721 Contract Tests", async accounts => {
 
     it("Can transfer from address as approved operator (IERC721)", async () => {
         //send transferFrom transaction
+        //transfer from user c to user b as user a
         const t1 = await this.contracts[0].transferFrom(userC, userB, 0, {from: userA});
 
         //check event emitted
@@ -260,7 +289,7 @@ contract("BuyableERC721 Contract Tests", async accounts => {
         const q5 = await this.contracts[0].getApproved(0);
 
         //check queries
-        assert.equal(q1.toNumber(), 0);
+        assert.equal(q1.toNumber(), 1);
         assert.equal(q2.toNumber(), 1);
         assert.equal(q3.toNumber(), 0);
         assert.equal(q4, userB);
@@ -342,7 +371,7 @@ contract("BuyableERC721 Contract Tests", async accounts => {
         const q4 = await this.contracts[0].burnCount();
 
         //check queries
-        assert.equal(q1.toNumber(), 0);
+        assert.equal(q1.toNumber(), 1);
         assert.equal(q2.toNumber(), 0);
         assert.equal(q3.toNumber(), 0);
         assert.equal(q4.toNumber(), 1);
