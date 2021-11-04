@@ -43,6 +43,22 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
         const q1 = await this.contracts[1].paused();
 
         //check query
+        assert.equal(q1, true);
+    });
+
+    it("Can toggle paused state (Pausable)", async () => {
+        //query contract
+        const t1 = await this.contracts[1].togglePaused();
+
+        //check event emitted
+        expectEvent(t1, 'Unpaused', {
+            account: deployer
+        });
+
+        //query state
+        const q1 = await this.contracts[1].paused();
+
+        //check queries
         assert.equal(q1, false);
     });
 

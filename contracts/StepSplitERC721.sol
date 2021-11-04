@@ -27,7 +27,8 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721 {
         maxSupply = maxSupply_;
         splitter = splitter_;
 
-        //TODO: initialize paused?
+        //set initial state to paused
+        _pause();
     }
 
     /// @dev toggles paused state
