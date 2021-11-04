@@ -79,6 +79,9 @@ contract StepPriceERC721 is Ownable, Pausable, ERC721 {
     /// @dev mints the tokenId and forwards data if min value is paid
     /// @param data extra bytes data to pass along
     function mint(bytes memory data) public payable whenNotPaused {
+        //Check if max supply has been reached
+        require(mintCount <= maxSupply, "max supply reached");
+        
         if (mintCount > freeMints) {
             //validate
             require(msg.value == getPrice(), "Must send exact value to mint");
