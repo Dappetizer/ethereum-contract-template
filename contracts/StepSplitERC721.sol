@@ -66,25 +66,20 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721 {
 
     /// @dev mints the next tokenId to msg.sender if min value is paid
     function mint() public payable whenNotPaused {
-        if (mintCount > freeMints) {
+        require(mintCount + 1 <= maxSupply, "max supply reached");
+
+        if (mintCount + 1 > freeMints) {
             //validate
             require(msg.value == getPrice(), "Must send exact value to mint");
+        } else {
+            require(msg.value == 0, "value sent on free mint");
         }
 
         //send eth to owner address
         (bool sent, bytes memory data) = payable(splitter).call{value: msg.value}("");
         require(sent, "Failed to send to splitter address");
 
-        _safeMint(msg.sender, mintCount);
-    }
-
-    /// @dev burns a token by setting its ownership to the zero address
-    /// @param tokenId id of token to burn
-    function burn(uint256 tokenId) public whenNotPaused {
-        //validate
-        require(_isApprovedOrOwner(_msgSender(), tokenId), "caller is not owner nor approved");
-
-        _burn(tokenId);
+        _safeMint(msg.sender, mintCount + 1);
     }
 
     /// @dev sets a new baseURI for contract
@@ -119,4 +114,6 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721 {
             burnCount += 1;
         }
     }
+
+
 }

@@ -1,6 +1,7 @@
 const { BN, constants, expectEvent, expectRevert, balance } = require("@openzeppelin/test-helpers");
 const { web3 } = require("@openzeppelin/test-helpers/src/setup");
-const Splitter = artifacts.require("Splitter");
+// const Splitter = artifacts.require("Splitter");
+const Splitter = artifacts.require("PaymentSplitter");
 const StepSplitERC721 = artifacts.require("StepSplitERC721");
 
 contract("StepSplitERC721 Contract Tests", async accounts => {
@@ -8,7 +9,7 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
     const tokenName = "SPLIT Tokens";
     const tokenSymbol = "SPLIT";
     const baseURI = "https://some.public.api/endpoint/";
-    const maxSupply = 100;
+    const maxSupply = 3;
     
     let stepPrice = `${1*1e18}`; //1 ETH
     let freeMints = 1;
@@ -137,11 +138,14 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
         expectEvent(t1, 'Transfer', {
             from: constants.ZERO_ADDRESS,
             to: userA,
-            tokenId: "0"
+            tokenId: "1"
         });
 
         //query post state
         const q1 = await this.contracts[1].mintCount();
+
+        //check query
+        assert.equal(q1.toNumber(), 1);
     });
 
     it("Can mint paid token", async () => {
@@ -161,7 +165,7 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
         expectEvent(t1, 'Transfer', {
             from: constants.ZERO_ADDRESS,
             to: userA,
-            tokenId: "1"
+            tokenId: "2"
         });
 
         //query post state
@@ -175,14 +179,54 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
         // assert.equal(delta, basePrice + fees);
     });
 
+    it("Can reject minting past max supply", async () => {
+        //query pre state
+        const splitterTracker = await balance.tracker(splitterAddress, 'wei');
+        const buyerTracker = await balance.tracker(userA, 'wei');
+
+        //get initial balance
+        const splitterPreBal = await splitterTracker.get();
+        const buyerPreBal = await buyerTracker.get();
+
+        //mint to max supply
+        let price = await this.contracts[1].getPrice();
+        const t1 = await this.contracts[1].mint({from: userA, value: price});
+
+        //check event emitted
+        expectEvent(t1, 'Transfer', {
+            from: constants.ZERO_ADDRESS,
+            to: userA,
+            tokenId: "3"
+        });
+
+        //attempt to mint past max supply
+        price = await this.contracts[1].getPrice();
+        await expectRevert(
+            this.contracts[1].mint({from: userA, value: price}),
+            "max supply reached"
+        );
+
+        //query post state
+        const q1 = await this.contracts[1].mintCount();
+        // const splitterDelta = await splitterTracker.delta();
+        // const { delta, fees } = await buyerTracker.deltaWithFees();
+
+        //check queries
+        assert.equal(q1.toNumber(), maxSupply);
+        // assert.equal(splitterDelta.toString(), price.toString());
+        // assert.equal(delta, basePrice + fees);
+    });
+
     it("Can get token uri (IERC721Metadata)", async () => {
         //query contract
-        const q1 = await this.contracts[1].tokenURI(0);
-        const q2 = await this.contracts[1].tokenURI(1);
+        const q1 = await this.contracts[1].tokenURI(1);
+        const q2 = await this.contracts[1].tokenURI(2);
+        const q3 = await this.contracts[1].tokenURI(3);
         
         //check query
-        assert.equal(q1, baseURI + "0");
-        assert.equal(q2, baseURI + "1");
+        assert.equal(q1, baseURI + "1");
+        assert.equal(q2, baseURI + "2");
+        assert.equal(q3, baseURI + "3");
     });
 
     //---------- Splitter ----------
@@ -223,26 +267,34 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
         assert.equal(q1, 0);
     });
 
+    it("Can reject invalid release of tokens", async () => {
+        //attempt to release tokens of userB as userA
+        await expectRevert(
+            this.contracts[0].release(userB, {from: userA}),
+            "only owner account can trigger release"
+        );
+    });
+
     it("Can release tokens", async () => {
         //send transaction
-        const t1 = await this.contracts[0].release(userB, {from: userA});
-        const t2 = await this.contracts[0].release(userC, {from: userA});
+        const t1 = await this.contracts[0].release(userB, {from: userB});
+        const t2 = await this.contracts[0].release(userC, {from: userC});
 
         //check event emitted
         expectEvent(t1, 'PaymentReleased', {
             to: userB,
-            amount: `${0.8*1e18}`
+            amount: `${1.6*1e18}`
         });
         expectEvent(t2, 'PaymentReleased', {
             to: userC,
-            amount: `${0.2*1e18}`
+            amount: `${0.4*1e18}`
         });
 
         //query post state
         const q1 = await this.contracts[0].totalReleased();
 
         //check query
-        assert.equal(q1, `${1*1e18}`);
+        assert.equal(q1, `${2*1e18}`); //3 - 1 free mint
     });
 
 });
