@@ -11,9 +11,9 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
     const baseURI = "https://some.public.api/endpoint/";
     const maxSupply = 3;
     
-    let stepPrice = `${1*1e18}`; //1 ETH
+    let stepPrice = `${0.1*1e18}`; //0.1 ETH
     let freeMints = 1;
-    let stride = 5;
+    let stride = 1;
     let splitterAddress;
 
     before(async () => {
@@ -135,7 +135,7 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
         const q1 = await this.contracts[1].steps();
 
         //check query
-        assert.equal(q1, 1);
+        assert.equal(q1.toNumber(), 0);
     });
 
     it("Can get price", async () => {
@@ -143,12 +143,14 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
         const q1 = await this.contracts[1].getPrice();
 
         //check query
-        assert.equal(q1.toString(), `${1*1e18}`);
+        assert.equal(q1.toString(), "0");
     });
 
     it("Can mint free token", async () => {
+        const price = await this.contracts[1].getPrice();
+
         //send mint transaction
-        const t1 = await this.contracts[1].mint({from: userA});
+        const t1 = await this.contracts[1].mint(userA, {from: deployer, value: price});
 
         //check event emitted
         expectEvent(t1, 'Transfer', {
@@ -159,9 +161,15 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
 
         //query post state
         const q1 = await this.contracts[1].mintCount();
+        const q2 = await this.contracts[1].steps();
+        const q3 = await this.contracts[1].balanceOf(userA);
+        const q4 = await this.contracts[1].balanceOf(deployer);
 
         //check query
         assert.equal(q1.toNumber(), 1);
+        assert.equal(q2.toNumber(), 0);
+        assert.equal(q3.toNumber(), 1);
+        assert.equal(q4.toNumber(), 0);
     });
 
     it("Can mint paid token", async () => {
@@ -175,7 +183,7 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
         const buyerPreBal = await buyerTracker.get();
 
         //send mint transaction
-        const t1 = await this.contracts[1].mint({from: userA, value: price});
+        const t1 = await this.contracts[1].mint(userA, {from: userA, value: price});
 
         //check event emitted
         expectEvent(t1, 'Transfer', {
@@ -186,11 +194,15 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
 
         //query post state
         const q1 = await this.contracts[1].mintCount();
+        const q2 = await this.contracts[1].steps();
+        const q3 = await this.contracts[1].balanceOf(userA);
         const splitterDelta = await splitterTracker.delta();
         // const { delta, fees } = await buyerTracker.deltaWithFees();
 
         //check queries
         assert.equal(q1.toNumber(), 2);
+        assert.equal(q2.toNumber(), 1);
+        assert.equal(q3.toNumber(), 2);
         assert.equal(splitterDelta.toString(), price.toString());
         // assert.equal(delta, basePrice + fees);
     });
@@ -206,7 +218,7 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
 
         //mint to max supply
         let price = await this.contracts[1].getPrice();
-        const t1 = await this.contracts[1].mint({from: userA, value: price});
+        const t1 = await this.contracts[1].mint(userA, {from: userA, value: price});
 
         //check event emitted
         expectEvent(t1, 'Transfer', {
@@ -218,7 +230,7 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
         //attempt to mint past max supply
         price = await this.contracts[1].getPrice();
         await expectRevert(
-            this.contracts[1].mint({from: userA, value: price}),
+            this.contracts[1].mint(userA, {from: userA, value: price}),
             "max supply reached"
         );
 
@@ -299,18 +311,18 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
         //check event emitted
         expectEvent(t1, 'PaymentReleased', {
             to: userB,
-            amount: `${1.6*1e18}`
+            amount: `${0.24*1e18}`
         });
         expectEvent(t2, 'PaymentReleased', {
             to: userC,
-            amount: `${0.4*1e18}`
+            amount: `${0.06*1e18}`
         });
 
         //query post state
         const q1 = await this.contracts[0].totalReleased();
 
         //check query
-        assert.equal(q1, `${2*1e18}`); //3 - 1 free mint
+        assert.equal(q1, `${0.3*1e18}`); //excludes free mints
     });
 
 });

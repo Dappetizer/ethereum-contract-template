@@ -8,11 +8,10 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 contract StepSplitERC721 is Ownable, Pausable, ERC721 {
 
     uint256 public mintCount;
-    uint256 public burnCount;
     uint256 public maxSupply;
     uint256 public stepPrice = 1000000000000000000; //1 ETH
     uint256 public stride = 1; //number of mints per step
-    uint256 public steps = 1; //number of steps taken
+    uint256 public steps; //number of steps taken
     uint256 public freeMints; //token id < freeMints are free to mint
     string public baseURI;
     address public splitter; //splitter contract where mint revenue will be sent
@@ -38,11 +37,16 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721 {
 
     /// @dev gets the price of the next mintable token
     function getPrice() public view returns (uint256) {
+        //if next mint is free
+        if (mintCount + 1 <= freeMints) {
+            return 0;
+        }
+
         //if next mint is new step
-        if ((mintCount + 1) % stride == 0) {
-            return (steps + 1) * stepPrice;
+        if (((mintCount + 1) - freeMints) % stride == 0) {
+            return stepPrice * (steps + 1);
         } else {
-            return steps * stepPrice;
+            return stepPrice * steps;
         }
         
     }
@@ -66,13 +70,24 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721 {
     } 
 
     /// @dev mints the next tokenId to msg.sender if min value is paid
-    function mint() public payable whenNotPaused {
-        require(mintCount + 1 <= maxSupply, "max supply reached");
+    function mint(address to) public payable whenNotPaused {
+        //validate
+        require(to != address(0x0), "cannot mint to zero address");
+        require(mintCount < maxSupply, "max supply reached");
 
-        if (mintCount + 1 > freeMints) {
-            //validate
-            require(msg.value == getPrice(), "Must send exact value to mint");
+        mintCount += 1;
+
+        //if no more free mints
+        if (mintCount > freeMints) {
+            //validate price
+            require(msg.value == getPrice(), "must send exact value to mint");
+
+            if (mintCount % stride == 0) {
+                steps += 1;
+            }
         } else {
+            //validate
+            require(msg.sender == owner(), "only owner can free mint");
             require(msg.value == 0, "value sent on free mint");
         }
 
@@ -80,7 +95,7 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721 {
         (bool sent, bytes memory data) = payable(splitter).call{value: msg.value}("");
         require(sent, "Failed to send to splitter address");
 
-        _safeMint(msg.sender, mintCount + 1);
+        _safeMint(to, mintCount);
     }
 
     /// @dev sets a new baseURI for contract
@@ -94,27 +109,5 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721 {
     function _baseURI() internal view override returns (string memory) {
         return baseURI;
     }
-
-    /// @dev overridden ERC721 function hook that is called before every token transfer, including
-    /// minting and burning events.
-    /// @param from address token is moving from
-    /// @param to address token is moving to
-    /// @param tokenId id of token being moved
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal override {
-        //if minting
-        if (from == address(0x0)) {
-            mintCount += 1;
-
-            if (mintCount % stride == 0) {
-                steps += 1;
-            }
-        }
-
-        //if burning
-        if (to == address(0x0)) {
-            burnCount += 1;
-        }
-    }
-
 
 }
