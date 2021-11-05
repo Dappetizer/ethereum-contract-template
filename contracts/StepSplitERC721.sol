@@ -3,9 +3,9 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
-contract StepSplitERC721 is Ownable, Pausable, ERC721 {
+contract StepSplitERC721 is Ownable, Pausable, ERC721Enumerable {
 
     uint256 public mintCount;
     uint256 public maxSupply;
