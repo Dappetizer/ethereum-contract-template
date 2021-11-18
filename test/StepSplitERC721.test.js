@@ -1,6 +1,5 @@
 const { BN, constants, expectEvent, expectRevert, balance } = require("@openzeppelin/test-helpers");
 const { web3 } = require("@openzeppelin/test-helpers/src/setup");
-// const Splitter = artifacts.require("Splitter");
 const Splitter = artifacts.require("PaymentSplitter");
 const StepSplitERC721 = artifacts.require("StepSplitERC721");
 
@@ -15,6 +14,8 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
     let freeMints = 1;
     let stride = 1;
     let splitterAddress;
+    let label = "Test Label";
+    let message = "Accepting offers";
 
     before(async () => {
         //initialize contract array
@@ -255,6 +256,42 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
         assert.equal(q1, baseURI + "1");
         assert.equal(q2, baseURI + "2");
         assert.equal(q3, baseURI + "3");
+    });
+
+    it("Can set and get token label", async () => {
+        //send transaction
+        const t1 = await this.contracts[1].setLabel(1, label, {from: userA});
+
+        //query contract
+        const q1 = await this.contracts[1].labels.call(1);
+
+        //check query
+        assert.equal(q1, label);
+    });
+
+    it("Can set and get token message", async () => {
+        //send transaction
+        const t1 = await this.contracts[1].setMessage(1, message, {from: userA});
+
+        //query contract
+        const q1 = await this.contracts[1].messages.call(1);
+
+        //check query
+        assert.equal(q1, message);
+    });
+
+    it("Can reject invalid setting of label and message", async () => {
+        //attempt to set label as not token owner
+        await expectRevert(
+            this.contracts[1].setLabel(1, label, {from: deployer}),
+            "only token owner can call"
+        );
+
+        //attempt to set message as not token owner
+        await expectRevert(
+            this.contracts[1].setMessage(1, message, {from: deployer}),
+            "only token owner can call"
+        );
     });
 
     //---------- Splitter ----------

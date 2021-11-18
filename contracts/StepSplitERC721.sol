@@ -15,10 +15,18 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721Enumerable {
     uint256 public freeMints; //token id < freeMints are free to mint
     string public baseURI;
     address public splitter; //splitter contract where mint revenue will be sent
+    mapping(uint256 => string) public labels; //token id => label
+    mapping(uint256 => string) public messages; //token id => message
 
     /// @dev reverts if any tokens have been minted
     modifier onlyPreMint() {
         require(mintCount == 0, "Must be before first mint");
+        _;
+    }
+
+    ///@dev reverts if not token owner
+    modifier onlyTokenOwner(uint256 tokenId) {
+        require(msg.sender == ownerOf(tokenId), "only token owner can call");
         _;
     }
 
@@ -67,7 +75,7 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721Enumerable {
     /// @dev sets number of initial free mints
     function setFreeMints(uint256 newFreeMints) public onlyOwner onlyPreMint {
         freeMints = newFreeMints;
-    } 
+    }
 
     /// @dev mints the next tokenId to msg.sender if min value is paid
     function mint(address to) public payable whenNotPaused {
@@ -96,6 +104,16 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721Enumerable {
         require(sent, "Failed to send to splitter address");
 
         _safeMint(to, mintCount);
+    }
+
+    /// @dev sets a new label for token id
+    function setLabel(uint256 tokenId, string memory newLabel) public onlyTokenOwner(tokenId) {
+        labels[tokenId] = newLabel;
+    }
+
+    /// @dev sets a new message for token id
+    function setMessage(uint256 tokenId, string memory newMessage) public onlyTokenOwner(tokenId) {
+        messages[tokenId] = newMessage;
     }
 
     /// @dev sets a new baseURI for contract
