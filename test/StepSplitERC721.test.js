@@ -217,6 +217,20 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
     });
 
     it("Can reject minting past max supply", async () => {
+        //pause
+        const t0 = await this.contracts[1].togglePaused();
+
+        p = await this.contracts[1].getPrice();
+        await expectRevert(
+            this.contracts[1].mint(userA, {from: userA, value: p}),
+            "contract is paused"
+        );
+
+        //pause
+        const t2 = await this.contracts[1].togglePaused();
+
+        //--------
+
         //query pre state
         const splitterTracker = await balance.tracker(splitterAddress, 'wei');
         const buyerTracker = await balance.tracker(userA, 'wei');
