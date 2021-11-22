@@ -78,30 +78,34 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721Enumerable {
     }
 
     /// @dev mints the next tokenId to msg.sender if min value is paid
-    function mint(address to) public payable whenNotPaused {
+    function mint(address to) public payable {
         //validate
         require(to != address(0x0), "cannot mint to zero address");
         require(mintCount < maxSupply, "max supply reached");
+
+        //calc price before incrementing mint count
+        uint256 price = getPrice();
 
         mintCount += 1;
 
         //if no more free mints
         if (mintCount > freeMints) {
-            //validate price
-            require(msg.value == getPrice(), "must send exact value to mint");
+            //validate
+            require(!paused(), "cannot mint while paused");
+            require(msg.value == price, "must send exact value to mint");
 
             if (mintCount % stride == 0) {
                 steps += 1;
             }
+
+            //send eth to splitter address
+            (bool sent, bytes memory data) = payable(splitter).call{value: msg.value}("");
+            require(sent, "Failed to send to splitter address");
         } else {
             //validate
             require(msg.sender == owner(), "only owner can free mint");
             require(msg.value == 0, "value sent on free mint");
         }
-
-        //send eth to owner address
-        (bool sent, bytes memory data) = payable(splitter).call{value: msg.value}("");
-        require(sent, "Failed to send to splitter address");
 
         _safeMint(to, mintCount);
     }

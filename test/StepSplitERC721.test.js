@@ -167,6 +167,7 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
         const q4 = await this.contracts[1].balanceOf(deployer);
 
         //check query
+        assert.equal(price.toNumber(), 0);
         assert.equal(q1.toNumber(), 1);
         assert.equal(q2.toNumber(), 0);
         assert.equal(q3.toNumber(), 1);
@@ -201,6 +202,7 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
         // const { delta, fees } = await buyerTracker.deltaWithFees();
 
         //check queries
+        assert.equal(price.toString(), "100000000000000000"); //0.1
         assert.equal(q1.toNumber(), 2);
         assert.equal(q2.toNumber(), 1);
         assert.equal(q3.toNumber(), 2);
@@ -228,12 +230,18 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
             tokenId: "3"
         });
 
+        //check
+        assert(price.toString(), "200000000000000000"); //0.2
+
         //attempt to mint past max supply
         price = await this.contracts[1].getPrice();
         await expectRevert(
             this.contracts[1].mint(userA, {from: userA, value: price}),
             "max supply reached"
         );
+
+        //check
+        assert(price.toString(), "300000000000000000"); //0.3
 
         //query post state
         const q1 = await this.contracts[1].mintCount();
