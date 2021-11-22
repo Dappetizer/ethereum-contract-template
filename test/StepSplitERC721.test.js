@@ -48,7 +48,7 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
     });
 
     it("Can toggle paused state (Pausable)", async () => {
-        //query contract
+        //send trx
         const t1 = await this.contracts[1].togglePaused();
 
         //check event emitted
@@ -148,6 +148,9 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
     });
 
     it("Can mint free token", async () => {
+        //pause to allow owner to mint
+        const t0 = await this.contracts[1].togglePaused();
+
         const price = await this.contracts[1].getPrice();
 
         //send mint transaction
@@ -159,6 +162,9 @@ contract("StepSplitERC721 Contract Tests", async accounts => {
             to: userA,
             tokenId: "1"
         });
+
+        //send trx
+        const t2 = await this.contracts[1].togglePaused();
 
         //query post state
         const q1 = await this.contracts[1].mintCount();

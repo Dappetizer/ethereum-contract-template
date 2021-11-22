@@ -83,6 +83,11 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721Enumerable {
         require(to != address(0x0), "cannot mint to zero address");
         require(mintCount < maxSupply, "max supply reached");
 
+        //owner can mint while paused
+        if (msg.sender != owner()) {
+            require(!paused(), "contract is paused");
+        }
+
         //calc price before incrementing mint count
         uint256 price = getPrice();
 
@@ -91,7 +96,6 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721Enumerable {
         //if no more free mints
         if (mintCount > freeMints) {
             //validate
-            require(!paused(), "cannot mint while paused");
             require(msg.value == price, "must send exact value to mint");
 
             if (mintCount % stride == 0) {
@@ -103,7 +107,7 @@ contract StepSplitERC721 is Ownable, Pausable, ERC721Enumerable {
             require(sent, "Failed to send to splitter address");
         } else {
             //validate
-            require(msg.sender == owner(), "only owner can free mint");
+            // require(msg.sender == owner(), "only owner can free mint");
             require(msg.value == 0, "value sent on free mint");
         }
 
