@@ -10,13 +10,12 @@ contract ERC20Timelock {
     address public immutable beneficiary; //address to receive tokens after timelock
     uint256 public immutable releaseTime; //release time of lock
 
-    constructor(address tokenContract_, address beneficiary_, uint256 releaseTime_) {
-        //validate
-        require(releaseTime_ > block.timestamp, "ERC20Timelock: release time must be in the future");
+    constructor(address tokenContract_, address beneficiary_, uint256 lockDuration_) {
+        require(lockDuration_ > 0, "lock duration must be greater than zero");
 
         tokenContract = tokenContract_;
         beneficiary = beneficiary_;
-        releaseTime = releaseTime_;
+        releaseTime = block.timestamp + lockDuration_;
     }
 
     function release() public virtual {
