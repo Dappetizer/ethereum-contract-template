@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 /// @title Custom ERC721 implementation.
 /// @author Craig Branscom
 /// @notice Contract is Ownable and implements the ERC721 spec with Metadata extension.
-contract CustomERC721 is Ownable, IERC721, IERC721Metadata {
+contract ImplementedERC721 is Ownable, IERC721, IERC721Metadata {
     using Address for address;
     using Strings for uint256;
 
